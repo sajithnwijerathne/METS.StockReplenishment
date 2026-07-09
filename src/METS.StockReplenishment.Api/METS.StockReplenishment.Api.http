@@ -1,0 +1,6 @@
+@METS.StockReplenishment.Api_HostAddress = http://localhost:5078
+
+GET {{METS.StockReplenishment.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
