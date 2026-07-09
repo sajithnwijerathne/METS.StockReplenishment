@@ -1,0 +1,41 @@
+
+# Build results
+bin/
+obj/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+packages/
+
+# ASP.NET
+wwwroot/lib/
+
+# Test Results
+TestResults/
+*.trx
+
+# Coverage
+coverage/
+coverage-report/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Publish output
+publish/
+
+# Generated files
+Generated/
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
