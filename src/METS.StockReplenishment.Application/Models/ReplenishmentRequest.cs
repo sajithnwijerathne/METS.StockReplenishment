@@ -6,7 +6,7 @@ public class ReplenishmentRequest
 
     public Priority Priority { get; set; }
 
-    public RequestStatus Status { get; set; }
+    public RequestStatus Status { get; set; } = RequestStatus.Draft;
 
     public ValidationStatus ValidationStatus { get; set; } = ValidationStatus.Pending;
 
