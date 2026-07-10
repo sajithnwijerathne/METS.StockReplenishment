@@ -105,8 +105,56 @@ public static class SeedDataInitializer
             ]
         };
 
+        // Added submitted and rejected requests for testing purposes
+
+        var submittedRequest = new ReplenishmentRequest
+        {
+            Id = Guid.NewGuid(),
+            LocationCode = "HITACHI-Ludvika",
+            Priority = Priority.Normal,
+            Status = RequestStatus.Submitted,
+            ValidationStatus = ValidationStatus.Valid,
+            CreatedAt = DateTime.UtcNow.AddHours(-5),
+            SubmittedAt = DateTime.UtcNow.AddHours(-4),
+            Items =
+            [
+                new RequestItem
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = "ART-4001",
+                    Description = "Filter Element",
+                    RequestedQuantity = 10,
+                    FulfilledQuantity = 0
+                }
+            ]
+        };
+
+        var rejectedRequest = new ReplenishmentRequest
+        {
+            Id = Guid.NewGuid(),
+            LocationCode = "HITACHI-Västerås",
+            Priority = Priority.Urgent,
+            Status = RequestStatus.Rejected,
+            ValidationStatus = ValidationStatus.Invalid,
+            RejectionReason = "Insufficient stock available.",
+            CreatedAt = DateTime.UtcNow.AddHours(-8),
+            SubmittedAt = DateTime.UtcNow.AddHours(-7),
+            ReviewedAt = DateTime.UtcNow.AddHours(-6),
+            Items =
+            [
+                new RequestItem
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = "ART-5001",
+                    Description = "Control Valve",
+                    RequestedQuantity = 5,
+                    FulfilledQuantity = 0
+                }
+            ]
+        };
+
         await dbContext.Locations.AddRangeAsync(locations);
-        await dbContext.ReplenishmentRequests.AddRangeAsync(draftRequest, approvedRequest, fulfilledRequest);
+        await dbContext.ReplenishmentRequests.AddRangeAsync(draftRequest, approvedRequest, fulfilledRequest, submittedRequest, rejectedRequest);
         await dbContext.SaveChangesAsync();
     }
 }
