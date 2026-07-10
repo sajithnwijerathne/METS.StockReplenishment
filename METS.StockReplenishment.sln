@@ -7,15 +7,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Tests", "\Users\sajith\Documents\Learning\Assignments\METS.StockReplenishment\tests\METS.StockReplenishment.Tests\METS.StockReplenishment.Tests.csproj", "{3554608A-8787-85D9-2D6D-89C0A7EBF30B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Tests", "tests\METS.StockReplenishment.Tests\METS.StockReplenishment.Tests.csproj", "{3554608A-8787-85D9-2D6D-89C0A7EBF30B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Api", "\Users\sajith\Documents\Learning\Assignments\METS.StockReplenishment\src\METS.StockReplenishment.Api\METS.StockReplenishment.Api.csproj", "{A75B19E2-A386-9099-5DF5-BDFF3545F7F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Api", "src\METS.StockReplenishment.Api\METS.StockReplenishment.Api.csproj", "{A75B19E2-A386-9099-5DF5-BDFF3545F7F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Application", "\Users\sajith\Documents\Learning\Assignments\METS.StockReplenishment\src\METS.StockReplenishment.Application\METS.StockReplenishment.Application.csproj", "{4C7801E3-955B-CA3E-0B62-E382E0AA2173}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Application", "src\METS.StockReplenishment.Application\METS.StockReplenishment.Application.csproj", "{4C7801E3-955B-CA3E-0B62-E382E0AA2173}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Infrastructure", "\Users\sajith\Documents\Learning\Assignments\METS.StockReplenishment\src\METS.StockReplenishment.Infrastructure\METS.StockReplenishment.Infrastructure.csproj", "{A0E476AB-7FD7-4A00-0B94-37AA0211FBE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Infrastructure", "src\METS.StockReplenishment.Infrastructure\METS.StockReplenishment.Infrastructure.csproj", "{A0E476AB-7FD7-4A00-0B94-37AA0211FBE0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Blazor", "\Users\sajith\Documents\Learning\Assignments\METS.StockReplenishment\src\METS.StockReplenishment.Blazor\METS.StockReplenishment.Blazor.csproj", "{85A5571B-C022-EAD3-85EB-06EC47A23189}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "METS.StockReplenishment.Blazor", "src\METS.StockReplenishment.Blazor\METS.StockReplenishment.Blazor.csproj", "{85A5571B-C022-EAD3-85EB-06EC47A23189}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
