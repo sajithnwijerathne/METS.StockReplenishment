@@ -67,6 +67,10 @@ public class StockReplenishmentDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
 
+            entity.Property(x => x.Code)
+                .IsRequired()
+                .HasMaxLength(50);
+
             entity.Property(x => x.Address)
                 .HasMaxLength(200);
 
