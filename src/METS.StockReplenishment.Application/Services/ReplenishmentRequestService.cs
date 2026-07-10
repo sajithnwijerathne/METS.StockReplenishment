@@ -65,4 +65,34 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
             ValidationStatus = request.ValidationStatus
         };
     }
+
+    private static RequestDto MapToRequestDto(ReplenishmentRequest request)
+    {
+        return new RequestDto
+        {
+            Id = request.Id,
+            LocationCode = request.LocationCode,
+            Priority = request.Priority,
+            Status = request.Status,
+            ValidationStatus = request.ValidationStatus,
+            RejectionReason = request.RejectionReason,
+            CreatedAt = request.CreatedAt,
+            SubmittedAt = request.SubmittedAt,
+            ReviewedAt = request.ReviewedAt,
+            FulfilledAt = request.FulfilledAt,
+            Items = request.Items.Select(MapToRequestItemDto).ToList()
+        };
+    }
+
+    private static RequestItemDto MapToRequestItemDto(RequestItem item)
+    {
+        return new RequestItemDto
+        {
+            Id = item.Id,
+            ArticleNumber = item.ArticleNumber,
+            Description = item.Description,
+            RequestedQuantity = item.RequestedQuantity,
+            FulfilledQuantity = item.FulfilledQuantity
+        };
+    }
 }
