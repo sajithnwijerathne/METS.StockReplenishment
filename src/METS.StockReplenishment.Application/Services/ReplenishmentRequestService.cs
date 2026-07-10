@@ -2,11 +2,15 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
 {
     private readonly IReplenishmentRequestRepository _requestRepository;
     private readonly ILocationRepository _locationRepository;
-
-    public ReplenishmentRequestService(IReplenishmentRequestRepository requestRepository, ILocationRepository locationRepository)
+    private readonly IValidationQueue _validationQueue;
+    public ReplenishmentRequestService(
+        IReplenishmentRequestRepository requestRepository,
+        ILocationRepository locationRepository,
+        IValidationQueue validationQueue)
     {
         _requestRepository = requestRepository;
         _locationRepository = locationRepository;
+        _validationQueue = validationQueue;
     }
 
     public async Task<RequestDto> CreateDraftAsync(
@@ -136,6 +140,7 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         request.RejectionReason = null;
 
         await _requestRepository.SaveChangesAsync(cancellationToken);
+        await _validationQueue.QueueAsync(requestId, cancellationToken);
     }
 
     public async Task ApproveAsync(
@@ -147,6 +152,11 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         if (request.Status != RequestStatus.Submitted)
         {
             throw new InvalidOperationException("Only submitted requests can be approved.");
+        }
+
+        if (request.ValidationStatus != ValidationStatus.Valid)
+        {
+            throw new InvalidOperationException("Only requests with valid stock validation can be approved.");
         }
 
         request.Status = RequestStatus.Approved;

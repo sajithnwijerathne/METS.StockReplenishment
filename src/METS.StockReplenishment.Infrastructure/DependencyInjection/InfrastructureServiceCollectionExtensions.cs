@@ -9,8 +9,11 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IReplenishmentRequestRepository, ReplenishmentRequestRepository>();
         services.AddScoped<ILocationRepository, LocationRepository>();
-
         services.AddScoped<IReplenishmentRequestService, ReplenishmentRequestService>();
+        services.AddScoped<IStockValidationService, SimulatedStockValidationService>();
+
+        services.AddSingleton<IValidationQueue, InMemoryValidationQueue>();
+        services.AddHostedService<ValidationBackgroundService>();
 
         return services;
     }
