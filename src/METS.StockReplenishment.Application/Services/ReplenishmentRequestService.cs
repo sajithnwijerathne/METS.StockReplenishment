@@ -57,6 +57,7 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         };
 
         await _requestRepository.AddAsync(request, cancellationToken);
+        await _requestRepository.SaveChangesAsync(cancellationToken);
 
         return new RequestDto
         {

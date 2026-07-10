@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+    <ProjectReference Include="..\METS.StockReplenishment.Application\METS.StockReplenishment.Application.csproj" />
+    <ProjectReference Include="..\METS.StockReplenishment.Infrastructure\METS.StockReplenishment.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
