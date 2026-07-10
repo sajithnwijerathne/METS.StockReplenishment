@@ -1,6 +1,139 @@
-@METS.StockReplenishment.Api_HostAddress = http://localhost:5078
+@baseUrl = http://localhost:5078
+@approvalRequestId = REQUEST_ID
+@rejectionRequestId = REQUEST_ID
 
-GET {{METS.StockReplenishment.Api_HostAddress}}/weatherforecast/
+###
+# Get all locations
+GET {{baseUrl}}/api/locations
 Accept: application/json
 
 ###
+# Get requests
+GET {{baseUrl}}/api/requests
+Accept: application/json
+
+###
+# Create a draft request for submit -> poll -> approve -> fulfill
+POST {{baseUrl}}/api/requests
+Content-Type: application/json
+Accept: application/json
+
+{
+  "locationCode": "HITACHI-Ludvika",
+  "priority": "Normal",
+  "items": [
+    {
+      "articleNumber": "ART-4001",
+      "description": "Copper Coil",
+      "requestedQuantity": 10
+    },
+    {
+      "articleNumber": "ART-4002",
+      "description": "Insulation Sheet",
+      "requestedQuantity": 5
+    }
+  ]
+}
+
+
+###
+# Submit the created draft
+POST {{baseUrl}}/api/requests/{{approvalRequestId}}/submit
+Accept: application/json
+
+###
+# Poll request details until validationStatus changes from Pending to Valid or Invalid
+GET {{baseUrl}}/api/requests/{{approvalRequestId}}
+Accept: application/json
+
+###
+# Approve the request after validationStatus becomes Valid
+POST {{baseUrl}}/api/requests/{{approvalRequestId}}/approve
+Accept: application/json
+
+###
+# Get request details after approval
+GET {{baseUrl}}/api/requests/{{approvalRequestId}}
+Accept: application/json
+
+###
+# Fulfill the approved request
+POST {{baseUrl}}/api/requests/{{approvalRequestId}}/fulfill
+Content-Type: application/json
+Accept: application/json
+
+{
+  "items": [
+    {
+      "requestItemId": "FIRST_ITEM_ID",
+      "fulfilledQuantity": 10
+    },
+    {
+      "requestItemId": "SECOND_ITEM_ID",
+      "fulfilledQuantity": 5
+    }
+  ]
+}
+
+###
+# Get request details after fulfillment
+GET {{baseUrl}}/api/requests/{{approvalRequestId}}
+Accept: application/json
+
+###
+# Create a draft request for submit -> reject
+POST {{baseUrl}}/api/requests
+Content-Type: application/json
+Accept: application/json
+
+{
+  "locationCode": "HITACHI-Västerås",
+  "priority": "Urgent",
+  "items": [
+    {
+      "articleNumber": "ART-5001",
+      "description": "Valve Assembly",
+      "requestedQuantity": 3
+    }
+  ]
+}
+
+###
+# Submit the second draft
+POST {{baseUrl}}/api/requests/{{rejectionRequestId}}/submit
+Accept: application/json
+
+###
+# Poll until validation finishes
+GET {{baseUrl}}/api/requests/{{rejectionRequestId}}
+Accept: application/json
+
+###
+# Reject the submitted request
+POST {{baseUrl}}/api/requests/{{rejectionRequestId}}/reject
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "Stock request is not required for the current shift."
+}
+
+###
+# Get request details after rejection
+GET {{baseUrl}}/api/requests/{{rejectionRequestId}}
+Accept: application/json
+
+###
+# Filter by status
+GET {{baseUrl}}/api/requests?status=Submitted&pageNumber=1&pageSize=10
+Accept: application/json
+
+###
+# Filter by priority
+GET {{baseUrl}}/api/requests?priority=Urgent&pageNumber=1&pageSize=10
+Accept: application/json
+
+###
+# Filter by location
+GET {{baseUrl}}/api/requests?locationCode=HITACHI-Ludvika&pageNumber=1&pageSize=10
+Accept: application/json
