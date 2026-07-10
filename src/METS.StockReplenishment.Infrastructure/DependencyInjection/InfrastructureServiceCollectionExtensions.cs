@@ -10,6 +10,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IReplenishmentRequestRepository, ReplenishmentRequestRepository>();
         services.AddScoped<ILocationRepository, LocationRepository>();
 
+        services.AddScoped<IReplenishmentRequestService, ReplenishmentRequestService>();
+
         return services;
     }
 }
