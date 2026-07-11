@@ -46,7 +46,12 @@ else
 
 				@if (CanReject)
 				{
-					<MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RejectAsync">
+					<MudButton
+						Variant="Variant.Outlined"
+						Color="Color.Error"
+						Disabled="@IsRejectDisabled"
+						OnClick="RejectAsync"
+					>
 						Reject
 					</MudButton>
 				}
@@ -85,8 +90,12 @@ else
 							</MudText>
 							<MudText>
 								<b>Validation:</b>
-								<MudChip T="string" Color="@GetValidationColor(_request.ValidationStatus)" Variant="Variant.Outlined">
-									@_request.ValidationStatus
+								<MudChip
+									T="string"
+									Color="@GetValidationColor(_request.Status, _request.ValidationStatus)"
+									Variant="Variant.Outlined"
+								>
+									@GetValidationLabel(_request.Status, _request.ValidationStatus)
 								</MudChip>
 							</MudText>
 							<MudText><b>Created:</b> @_request.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
@@ -121,17 +130,21 @@ else
 
 							@if (CanFulfill)
 							{
-									<MudText Typo="Typo.body2">
-											Enter fulfilled quantities for each item before marking the request as fulfilled.
-									</MudText>
+								<MudText Typo="Typo.body2">
+									Enter fulfilled quantities for each item before marking the request as fulfilled.
+								</MudText>
 							}
 
-							@if (_request.ValidationStatus == ValidationStatus.Pending)
+							@if (IsValidationInProgress)
 							{
-									<MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-											Validation is still running. This page refreshes automatically every few seconds.
-									</MudAlert>
+								<MudPaper Class="pa-4">
+									<MudStack Spacing="2">
+										<MudText Typo="Typo.body1">Stock validation is in progress</MudText>
+										<MudProgressLinear Indeterminate="true" Color="Color.Info" />
+									</MudStack>
+								</MudPaper>
 							}
+
 						</MudStack>
 					</MudPaper>
 				</MudItem>
@@ -188,6 +201,9 @@ else
 	private bool CanApprove => _request?.Status == RequestStatus.Submitted && _request.ValidationStatus == ValidationStatus.Valid;
 	private bool CanReject => _request?.Status == RequestStatus.Submitted;
 	private bool CanFulfill => _request?.Status == RequestStatus.Approved;
+	private bool IsValidationInProgress => _request?.Status == RequestStatus.Submitted && _request.ValidationStatus == ValidationStatus.Pending;
+
+	private bool IsRejectDisabled => _request?.ValidationStatus == ValidationStatus.Pending;
 
 	protected override async Task OnParametersSetAsync()
 	{
@@ -223,7 +239,7 @@ else
 	{
 		await RunActionAsync(
 			() => ApiClient.SubmitRequestAsync(RequestId),
-			"Request submitted. Validation is now running.");
+			"Request submitted.");
 	}
 
 	private async Task ApproveAsync()
@@ -301,8 +317,8 @@ else
 	private decimal GetFulfillmentValue(RequestItemDto item)
 	{
 		return _fulfillmentValues.TryGetValue(item.Id, out var value)
-				? value
-				: item.FulfilledQuantity;
+			? value
+			: item.FulfilledQuantity;
 	}
 
 	private void SetFulfillmentValue(Guid itemId, decimal value)
@@ -314,7 +330,7 @@ else
 	{
 		StopPolling();
 
-		if (_request?.ValidationStatus != ValidationStatus.Pending)
+		if (_request?.Status != RequestStatus.Submitted || _request?.ValidationStatus != ValidationStatus.Pending)
 		{
 			return;
 		}
@@ -388,13 +404,26 @@ else
 		};
 	}
 
-	private static Color GetValidationColor(ValidationStatus status)
+	private static string GetValidationLabel(RequestStatus status, ValidationStatus validationStatus)
 	{
-		return status switch
+		return (status, validationStatus) switch
 		{
-			ValidationStatus.Pending => Color.Warning,
-			ValidationStatus.Valid => Color.Success,
-			ValidationStatus.Invalid => Color.Error,
+			(RequestStatus.Draft, ValidationStatus.NotStarted) => "Awaiting submission",
+			(_, ValidationStatus.Pending) => "Pending",
+			(_, ValidationStatus.Valid) => "Valid",
+			(_, ValidationStatus.Invalid) => "Invalid",
+			_ => validationStatus.ToString()
+		};
+	}
+
+	private static Color GetValidationColor(RequestStatus status, ValidationStatus validationStatus)
+	{
+		return (status, validationStatus) switch
+		{
+			(RequestStatus.Draft, ValidationStatus.NotStarted) => Color.Default,
+			(_, ValidationStatus.Pending) => Color.Warning,
+			(_, ValidationStatus.Valid) => Color.Success,
+			(_, ValidationStatus.Invalid) => Color.Error,
 			_ => Color.Default
 		};
 	}

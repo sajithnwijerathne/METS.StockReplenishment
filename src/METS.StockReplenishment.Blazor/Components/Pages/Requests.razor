@@ -5,7 +5,13 @@
 <PageTitle>Requests</PageTitle>
 
 <MudStack Spacing="3">
-	<MudText Typo="Typo.h4">Stock Replenishment Requests</MudText>
+	<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+		<MudText Typo="Typo.h4">Stock Replenishment Requests</MudText>
+
+		<MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CreateNewRequest">
+			Create New Request
+		</MudButton>
+	</MudStack>
 
 	<MudPaper Class="pa-4">
 		<MudGrid Spacing="3">
@@ -92,8 +98,12 @@
 					</MudChip>
 				</MudTd>
 				<MudTd DataLabel="Validation">
-					<MudChip T="string" Color="@GetValidationColor(context.ValidationStatus)" Variant="Variant.Outlined">
-						@context.ValidationStatus
+					<MudChip
+						T="string"
+						Color="@GetValidationColor(context.Status, context.ValidationStatus)"
+						Variant="Variant.Outlined"
+					>
+						@GetValidationLabel(context.Status, context.ValidationStatus)
 					</MudChip>
 				</MudTd>
 				<MudTd DataLabel="Items">@context.ItemCount</MudTd>
@@ -244,6 +254,11 @@
 		NavigationManager.NavigateTo($"/requests/{requestId}");
 	}
 
+	private void CreateNewRequest()
+	{
+		NavigationManager.NavigateTo("/requests/create");
+	}
+
 	private static Color GetStatusColor(RequestStatus status)
 	{
 		return status switch
@@ -257,13 +272,26 @@
 		};
 	}
 
-	private static Color GetValidationColor(ValidationStatus status)
+	private static string GetValidationLabel(RequestStatus status, ValidationStatus validationStatus)
 	{
-		return status switch
+		return (status, validationStatus) switch
 		{
-			ValidationStatus.Pending => Color.Warning,
-			ValidationStatus.Valid => Color.Success,
-			ValidationStatus.Invalid => Color.Error,
+			(RequestStatus.Draft, ValidationStatus.NotStarted) => "Awaiting submission",
+			(_, ValidationStatus.Pending) => "Pending",
+			(_, ValidationStatus.Valid) => "Valid",
+			(_, ValidationStatus.Invalid) => "Invalid",
+			_ => validationStatus.ToString()
+		};
+	}
+
+	private static Color GetValidationColor(RequestStatus status, ValidationStatus validationStatus)
+	{
+		return (status, validationStatus) switch
+		{
+			(RequestStatus.Draft, ValidationStatus.NotStarted) => Color.Default,
+			(_, ValidationStatus.Pending) => Color.Warning,
+			(_, ValidationStatus.Valid) => Color.Success,
+			(_, ValidationStatus.Invalid) => Color.Error,
 			_ => Color.Default
 		};
 	}

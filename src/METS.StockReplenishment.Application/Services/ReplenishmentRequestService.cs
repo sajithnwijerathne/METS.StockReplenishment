@@ -44,7 +44,7 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
             LocationCode = dto.LocationCode,
             Priority = dto.Priority,
             Status = RequestStatus.Draft,
-            ValidationStatus = ValidationStatus.Pending,
+            ValidationStatus = ValidationStatus.NotStarted,
             CreatedAt = DateTime.UtcNow,
             Items = dto.Items.Select(item => new RequestItem
             {

@@ -8,7 +8,7 @@ public class ReplenishmentRequest
 
     public RequestStatus Status { get; set; } = RequestStatus.Draft;
 
-    public ValidationStatus ValidationStatus { get; set; } = ValidationStatus.Pending;
+    public ValidationStatus ValidationStatus { get; set; } = ValidationStatus.NotStarted;
 
     public string? RejectionReason { get; set; }
 

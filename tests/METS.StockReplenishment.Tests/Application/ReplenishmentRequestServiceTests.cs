@@ -49,13 +49,14 @@ public class ReplenishmentRequestServiceTests
 		Assert.That(result.LocationCode, Is.EqualTo(dto.LocationCode));
 		Assert.That(result.Priority, Is.EqualTo(dto.Priority));
 		Assert.That(result.Status, Is.EqualTo(RequestStatus.Draft));
-		Assert.That(result.ValidationStatus, Is.EqualTo(ValidationStatus.Pending));
+		Assert.That(result.ValidationStatus, Is.EqualTo(ValidationStatus.NotStarted));
 
 		await _requestRepository.Received(1).AddAsync(
 			Arg.Is<ReplenishmentRequest>(request =>
 				request.LocationCode == dto.LocationCode &&
 				request.Priority == dto.Priority &&
 				request.Status == RequestStatus.Draft &&
+				request.ValidationStatus == ValidationStatus.NotStarted &&
 				request.Items.Count == 1 &&
 				request.Items[0].ArticleNumber == "ART-1001"),
 			Arg.Any<CancellationToken>());
@@ -94,7 +95,7 @@ public class ReplenishmentRequestServiceTests
 	public async Task SubmitAsync_WhenDraft_UpdatesStateAndQueuesValidation()
 	{
 		var requestId = Guid.NewGuid();
-		var request = BuildRequest(requestId, RequestStatus.Draft, ValidationStatus.Pending);
+		var request = BuildRequest(requestId, RequestStatus.Draft, ValidationStatus.NotStarted);
 
 		_requestRepository.GetByIdAsync(requestId, Arg.Any<CancellationToken>())
 			.Returns(request);
@@ -251,7 +252,7 @@ public class ReplenishmentRequestServiceTests
 
 		var requests = new List<ReplenishmentRequest>
 		{
-			BuildRequest(Guid.NewGuid(), RequestStatus.Draft, ValidationStatus.Pending)
+			BuildRequest(Guid.NewGuid(), RequestStatus.Draft, ValidationStatus.NotStarted)
 		};
 
 		_requestRepository.GetPagedAsync(
