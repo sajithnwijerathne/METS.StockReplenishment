@@ -1,0 +1,407 @@
+@page "/requests/{RequestId:guid}"
+@implements IAsyncDisposable
+@inject ReplenishmentApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Request Details</PageTitle>
+
+@if (_isLoading)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+	<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+		@_error
+	</MudAlert>
+}
+else if (_request is null)
+{
+	<MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+		Request not found.
+	</MudAlert>
+}
+else
+{
+	<MudStack Spacing="3">
+		<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+			<MudButton Variant="Variant.Text" Color="Color.Default" OnClick="BackToList">
+					Back to Requests
+			</MudButton>
+
+			<MudStack Row="true" Spacing="2">
+				@if (CanSubmit)
+				{
+					<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync">
+						Submit
+					</MudButton>
+				}
+
+				@if (CanApprove)
+				{
+					<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ApproveAsync">
+						Approve
+					</MudButton>
+				}
+
+				@if (CanReject)
+				{
+					<MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RejectAsync">
+						Reject
+					</MudButton>
+				}
+
+				@if (CanFulfill)
+				{
+					<MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="FulfillAsync">
+						Mark Fulfilled
+					</MudButton>
+				}
+			</MudStack>
+		</MudStack>
+
+		<MudText Typo="Typo.h4">Request Details</MudText>
+
+		@if (!string.IsNullOrWhiteSpace(_actionMessage))
+		{
+			<MudAlert Severity="Severity.Success" Variant="Variant.Filled">
+				@_actionMessage
+			</MudAlert>
+		}
+
+			<MudGrid Spacing="3">
+				<MudItem xs="12" md="6">
+					<MudPaper Class="pa-4">
+						<MudStack Spacing="2">
+							<MudText Typo="Typo.h6">Summary</MudText>
+							<MudText><b>Request ID:</b> @_request.Id</MudText>
+							<MudText><b>Location:</b> @_request.LocationCode</MudText>
+							<MudText><b>Priority:</b> @_request.Priority</MudText>
+							<MudText>
+								<b>Status:</b>
+								<MudChip T="string" Color="@GetStatusColor(_request.Status)" Variant="Variant.Filled">
+									@_request.Status
+								</MudChip>
+							</MudText>
+							<MudText>
+								<b>Validation:</b>
+								<MudChip T="string" Color="@GetValidationColor(_request.ValidationStatus)" Variant="Variant.Outlined">
+									@_request.ValidationStatus
+								</MudChip>
+							</MudText>
+							<MudText><b>Created:</b> @_request.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
+							<MudText><b>Submitted:</b> @FormatDate(_request.SubmittedAt)</MudText>
+							<MudText><b>Reviewed:</b> @FormatDate(_request.ReviewedAt)</MudText>
+							<MudText><b>Fulfilled:</b> @FormatDate(_request.FulfilledAt)</MudText>
+
+							@if (!string.IsNullOrWhiteSpace(_request.RejectionReason))
+							{
+								<MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+									<b>Rejection Reason:</b> @_request.RejectionReason
+								</MudAlert>
+							}
+						</MudStack>
+					</MudPaper>
+				</MudItem>
+
+				<MudItem xs="12" md="6">
+					<MudPaper Class="pa-4">
+						<MudStack Spacing="2">
+							<MudText Typo="Typo.h6">Actions</MudText>
+
+							@if (CanReject)
+							{
+								<MudTextField
+									T="string"
+									Label="Rejection Reason"
+									Variant="Variant.Outlined"
+									Lines="3"
+									@bind-Value="_rejectReason" />
+							}
+
+							@if (CanFulfill)
+							{
+									<MudText Typo="Typo.body2">
+											Enter fulfilled quantities for each item before marking the request as fulfilled.
+									</MudText>
+							}
+
+							@if (_request.ValidationStatus == ValidationStatus.Pending)
+							{
+									<MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+											Validation is still running. This page refreshes automatically every few seconds.
+									</MudAlert>
+							}
+						</MudStack>
+					</MudPaper>
+				</MudItem>
+			</MudGrid>
+
+			<MudPaper Class="pa-2">
+				<MudTable Items="_request.Items" Dense="true" Hover="true" Striped="true">
+					<HeaderContent>
+						<MudTh>Article</MudTh>
+						<MudTh>Description</MudTh>
+						<MudTh>Requested</MudTh>
+						<MudTh>Fulfilled</MudTh>
+					</HeaderContent>
+					<RowTemplate>
+						<MudTd DataLabel="Article">@context.ArticleNumber</MudTd>
+						<MudTd DataLabel="Description">@context.Description</MudTd>
+						<MudTd DataLabel="Requested">@context.RequestedQuantity</MudTd>
+						<MudTd DataLabel="Fulfilled">
+							@if (CanFulfill)
+							{
+								<MudNumericField
+									T="decimal"
+									Min="0"
+									Max="@context.RequestedQuantity"
+									Immediate="true"
+									Variant="Variant.Outlined"
+									Value="@GetFulfillmentValue(context)"
+									ValueChanged="value => SetFulfillmentValue(context.Id, value)" />
+							}
+							else
+							{
+								@context.FulfilledQuantity
+							}
+						</MudTd>
+					</RowTemplate>
+				</MudTable>
+			</MudPaper>
+	</MudStack>
+}
+
+@code {
+	[Parameter]
+	public Guid RequestId { get; set; }
+
+	private RequestDto? _request;
+	private bool _isLoading = true;
+	private string? _error;
+	private string? _actionMessage;
+	private string _rejectReason = string.Empty;
+	private readonly Dictionary<Guid, decimal> _fulfillmentValues = [];
+	private CancellationTokenSource? _pollingCancellationTokenSource;
+
+	private bool CanSubmit => _request?.Status == RequestStatus.Draft;
+	private bool CanApprove => _request?.Status == RequestStatus.Submitted && _request.ValidationStatus == ValidationStatus.Valid;
+	private bool CanReject => _request?.Status == RequestStatus.Submitted;
+	private bool CanFulfill => _request?.Status == RequestStatus.Approved;
+
+	protected override async Task OnParametersSetAsync()
+	{
+			await LoadRequestAsync();
+			StartPollingIfNeeded();
+	}
+
+	private async Task LoadRequestAsync()
+	{
+		_isLoading = true;
+		_error = null;
+
+		try
+		{
+			_request = await ApiClient.GetRequestByIdAsync(RequestId);
+
+			if (_request is not null)
+			{
+				InitializeFulfillmentValues(_request);
+			}
+		}
+		catch (Exception ex)
+		{
+				_error = $"Failed to load request: {ex.Message}";
+		}
+		finally
+		{
+				_isLoading = false;
+		}
+	}
+
+	private async Task SubmitAsync()
+	{
+		await RunActionAsync(
+			() => ApiClient.SubmitRequestAsync(RequestId),
+			"Request submitted. Validation is now running.");
+	}
+
+	private async Task ApproveAsync()
+	{
+		await RunActionAsync(
+			() => ApiClient.ApproveRequestAsync(RequestId),
+			"Request approved.");
+	}
+
+	private async Task RejectAsync()
+	{
+		if (string.IsNullOrWhiteSpace(_rejectReason))
+		{
+			_error = "A rejection reason is required.";
+			return;
+		}
+
+		await RunActionAsync(
+			() => ApiClient.RejectRequestAsync(RequestId, new RejectRequestDto
+			{
+				Reason = _rejectReason
+			}),
+			"Request rejected.");
+	}
+
+	private async Task FulfillAsync()
+	{
+		if (_request is null)
+		{
+			return;
+		}
+
+		var dto = new FulfillRequestDto
+		{
+			Items = _request.Items.Select(item => new FulfillRequestItemDto
+			{
+				RequestItemId = item.Id,
+				FulfilledQuantity = GetFulfillmentValue(item)
+			}).ToList()
+		};
+
+		await RunActionAsync(
+			() => ApiClient.FulfillRequestAsync(RequestId, dto),
+			"Request fulfilled.");
+	}
+
+	private async Task RunActionAsync(Func<Task> action, string successMessage)
+	{
+		_error = null;
+		_actionMessage = null;
+
+		try
+		{
+			await action();
+			_actionMessage = successMessage;
+			await LoadRequestAsync();
+			StartPollingIfNeeded();
+		}
+		catch (Exception ex)
+		{
+			_error = ex.Message;
+		}
+	}
+
+	private void InitializeFulfillmentValues(RequestDto request)
+	{
+		_fulfillmentValues.Clear();
+
+		foreach (var item in request.Items)
+		{
+			_fulfillmentValues[item.Id] = item.FulfilledQuantity;
+		}
+	}
+
+	private decimal GetFulfillmentValue(RequestItemDto item)
+	{
+		return _fulfillmentValues.TryGetValue(item.Id, out var value)
+				? value
+				: item.FulfilledQuantity;
+	}
+
+	private void SetFulfillmentValue(Guid itemId, decimal value)
+	{
+		_fulfillmentValues[itemId] = value;
+	}
+
+	private void StartPollingIfNeeded()
+	{
+		StopPolling();
+
+		if (_request?.ValidationStatus != ValidationStatus.Pending)
+		{
+			return;
+		}
+
+		_pollingCancellationTokenSource = new CancellationTokenSource();
+		_ = PollUntilValidationCompletesAsync(_pollingCancellationTokenSource.Token);
+	}
+
+	private async Task PollUntilValidationCompletesAsync(CancellationToken cancellationToken)
+	{
+		using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+
+		try
+		{
+			while (await timer.WaitForNextTickAsync(cancellationToken))
+			{
+				var latest = await ApiClient.GetRequestByIdAsync(RequestId, cancellationToken);
+				if (latest is null)
+				{
+					return;
+				}
+
+				_request = latest;
+				InitializeFulfillmentValues(latest);
+
+				await InvokeAsync(StateHasChanged);
+
+				if (latest.ValidationStatus != ValidationStatus.Pending)
+				{
+					return;
+				}
+			}
+		}
+		catch (OperationCanceledException)
+		{
+		}
+	}
+
+	private void StopPolling()
+	{
+		if (_pollingCancellationTokenSource is null)
+		{
+			return;
+		}
+
+		_pollingCancellationTokenSource.Cancel();
+		_pollingCancellationTokenSource.Dispose();
+		_pollingCancellationTokenSource = null;
+	}
+
+	private void BackToList()
+	{
+		NavigationManager.NavigateTo("/requests");
+	}
+
+	private static string FormatDate(DateTime? value)
+	{
+		return value?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-";
+	}
+
+	private static Color GetStatusColor(RequestStatus status)
+	{
+		return status switch
+		{
+			RequestStatus.Draft => Color.Default,
+			RequestStatus.Submitted => Color.Info,
+			RequestStatus.Approved => Color.Success,
+			RequestStatus.Rejected => Color.Error,
+			RequestStatus.Fulfilled => Color.Primary,
+			_ => Color.Default
+		};
+	}
+
+	private static Color GetValidationColor(ValidationStatus status)
+	{
+		return status switch
+		{
+			ValidationStatus.Pending => Color.Warning,
+			ValidationStatus.Valid => Color.Success,
+			ValidationStatus.Invalid => Color.Error,
+			_ => Color.Default
+		};
+	}
+
+	public ValueTask DisposeAsync()
+	{
+		StopPolling();
+		return ValueTask.CompletedTask;
+	}
+}

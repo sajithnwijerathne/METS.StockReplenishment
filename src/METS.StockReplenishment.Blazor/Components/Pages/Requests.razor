@@ -1,280 +1,275 @@
 @page "/requests"
-@rendermode InteractiveServer
 @inject ReplenishmentApiClient ApiClient
 @inject NavigationManager NavigationManager
 
 <PageTitle>Requests</PageTitle>
 
 <MudStack Spacing="3">
-    <MudText Typo="Typo.h4">Stock Replenishment Requests</MudText>
+	<MudText Typo="Typo.h4">Stock Replenishment Requests</MudText>
 
-    <MudPaper Class="pa-4">
-        <MudGrid Spacing="3">
-            <MudItem xs="12" sm="6" md="3">
-                <MudSelect T="RequestStatus?" Label="Status" @bind-Value="_filter.Status" Clearable="true">
-                    <MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Draft)">Draft</MudSelectItem>
-                    <MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Submitted)">Submitted</MudSelectItem>
-                    <MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Approved)">Approved</MudSelectItem>
-                    <MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Rejected)">Rejected</MudSelectItem>
-                    <MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Fulfilled)">Fulfilled</MudSelectItem>
-                </MudSelect>
-            </MudItem>
+	<MudPaper Class="pa-4">
+		<MudGrid Spacing="3">
+			<MudItem xs="12" sm="6" md="3">
+				<MudSelect T="RequestStatus?" Label="Status" @bind-Value="_filter.Status" Clearable="true">
+					<MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Draft)">Draft</MudSelectItem>
+					<MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Submitted)">Submitted</MudSelectItem>
+					<MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Approved)">Approved</MudSelectItem>
+					<MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Rejected)">Rejected</MudSelectItem>
+					<MudSelectItem T="RequestStatus?" Value="@((RequestStatus?)RequestStatus.Fulfilled)">Fulfilled</MudSelectItem>
+				</MudSelect>
+			</MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudSelect T="Priority?" Label="Priority" @bind-Value="_filter.Priority" Clearable="true">
-                    <MudSelectItem T="Priority?" Value="@((Priority?)Priority.Low)">Low</MudSelectItem>
-                    <MudSelectItem T="Priority?" Value="@((Priority?)Priority.Normal)">Normal</MudSelectItem>
-                    <MudSelectItem T="Priority?" Value="@((Priority?)Priority.Urgent)">Urgent</MudSelectItem>
-                </MudSelect>
-            </MudItem>
+			<MudItem xs="12" sm="6" md="3">
+				<MudSelect T="Priority?" Label="Priority" @bind-Value="_filter.Priority" Clearable="true">
+					<MudSelectItem T="Priority?" Value="@((Priority?)Priority.Low)">Low</MudSelectItem>
+					<MudSelectItem T="Priority?" Value="@((Priority?)Priority.Normal)">Normal</MudSelectItem>
+					<MudSelectItem T="Priority?" Value="@((Priority?)Priority.Urgent)">Urgent</MudSelectItem>
+				</MudSelect>
+			</MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudSelect T="string" Label="Location" @bind-Value="_filter.LocationCode" Clearable="true">
-                    @foreach (var location in _locations)
-                    {
-                        <MudSelectItem T="string" Value="@location.Code">@location.Name</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
+			<MudItem xs="12" sm="6" md="3">
+				<MudSelect T="string" Label="Location" @bind-Value="_filter.LocationCode" Clearable="true">
+					@foreach (var location in _locations)
+					{
+						<MudSelectItem T="string" Value="@location.Code">@location.Name</MudSelectItem>
+					}
+				</MudSelect>
+			</MudItem>
 
-            <MudItem xs="12" sm="6" md="3">
-                <MudSelect T="int" Label="Page Size" @bind-Value="_filter.PageSize">
-                    <MudSelectItem T="int" Value="5">5</MudSelectItem>
-                    <MudSelectItem T="int" Value="10">10</MudSelectItem>
-                    <MudSelectItem T="int" Value="20">20</MudSelectItem>
-                </MudSelect>
-            </MudItem>
+			<MudItem xs="12" sm="6" md="3">
+				<MudSelect T="int" Label="Page Size" @bind-Value="_filter.PageSize">
+					<MudSelectItem T="int" Value="5">5</MudSelectItem>
+					<MudSelectItem T="int" Value="10">10</MudSelectItem>
+					<MudSelectItem T="int" Value="20">20</MudSelectItem>
+				</MudSelect>
+			</MudItem>
 
-            <MudItem xs="12">
-                <MudStack Row="true" Spacing="2">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync">
-                        Apply Filters
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFiltersAsync">
-                        Reset
-                    </MudButton>
-                    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="LoadRequestsAsync">
-                        Refresh
-                    </MudButton>
-                </MudStack>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+			<MudItem xs="12">
+				<MudStack Row="true" Spacing="2">
+					<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync">
+						Apply Filters
+					</MudButton>
+					<MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ResetFiltersAsync">
+						Reset
+					</MudButton>
+					<MudButton Variant="Variant.Text" Color="Color.Default" OnClick="LoadRequestsAsync">
+						Refresh
+					</MudButton>
+				</MudStack>
+			</MudItem>
+		</MudGrid>
+	</MudPaper>
 
-    @if (!string.IsNullOrWhiteSpace(_error))
-    {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-            @_error
-        </MudAlert>
-    }
+	@if (!string.IsNullOrWhiteSpace(_error))
+	{
+		<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+			@_error
+		</MudAlert>
+	}
 
-    <MudPaper Class="pa-2">
-        <MudTable Items="_requests.Items" Hover="true" Striped="true" Dense="true" Loading="_isLoading">
-            <HeaderContent>
-                <MudTh>Created</MudTh>
-                <MudTh>Location</MudTh>
-                <MudTh>Priority</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Validation</MudTh>
-                <MudTh>Items</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
-                <MudTd DataLabel="Location">@context.LocationCode</MudTd>
-                <MudTd DataLabel="Priority">
-                    <MudChip T="string" Color="@GetPriorityColor(context.Priority)" Variant="Variant.Outlined">
-                        @context.Priority
-                    </MudChip>
-                </MudTd>
-                <MudTd DataLabel="Status">
-                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled">
-                        @context.Status
-                    </MudChip>
-                </MudTd>
-                <MudTd DataLabel="Validation">
-                    <MudChip T="string" Color="@GetValidationColor(context.ValidationStatus)" Variant="Variant.Outlined">
-                        @context.ValidationStatus
-                    </MudChip>
-                </MudTd>
-                <MudTd DataLabel="Items">@context.ItemCount</MudTd>
-                <MudTd DataLabel="Actions">
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenDetails(context.Id))">
-                        View
-                    </MudButton>
-                </MudTd>
-            </RowTemplate>
-            <NoRecordsContent>
-                <MudText Class="pa-4">No requests matched the current filter.</MudText>
-            </NoRecordsContent>
-        </MudTable>
-    </MudPaper>
+	<MudPaper Class="pa-2">
+		<MudTable Items="_requests.Items" Hover="true" Striped="true" Dense="true" Loading="_isLoading">
+			<HeaderContent>
+				<MudTh>Created</MudTh>
+				<MudTh>Location</MudTh>
+				<MudTh>Priority</MudTh>
+				<MudTh>Status</MudTh>
+				<MudTh>Validation</MudTh>
+				<MudTh>Items</MudTh>
+				<MudTh></MudTh>
+			</HeaderContent>
+			<RowTemplate>
+				<MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+				<MudTd DataLabel="Location">@context.LocationCode</MudTd>
+				<MudTd DataLabel="Priority">
+					<MudChip T="string" Color="@GetPriorityColor(context.Priority)" Variant="Variant.Outlined">
+						@context.Priority
+					</MudChip>
+				</MudTd>
+				<MudTd DataLabel="Status">
+					<MudChip T="string" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled">
+						@context.Status
+					</MudChip>
+				</MudTd>
+				<MudTd DataLabel="Validation">
+					<MudChip T="string" Color="@GetValidationColor(context.ValidationStatus)" Variant="Variant.Outlined">
+						@context.ValidationStatus
+					</MudChip>
+				</MudTd>
+				<MudTd DataLabel="Items">@context.ItemCount</MudTd>
+				<MudTd DataLabel="Actions">
+					<MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenDetails(context.Id))">
+						View
+					</MudButton>
+				</MudTd>
+			</RowTemplate>
+			<NoRecordsContent>
+				<MudText Class="pa-4">No requests matched the current filter.</MudText>
+			</NoRecordsContent>
+		</MudTable>
+	</MudPaper>
 
-    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.body2">
-            Showing page @_requests.PageNumber of @TotalPages
-            (@_requests.TotalCount total requests)
-        </MudText>
+	<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+		<MudText Typo="Typo.body2">
+			Showing page @_requests.PageNumber of @TotalPages
+			(@_requests.TotalCount total requests)
+		</MudText>
 
-        <MudStack Row="true" Spacing="2">
-            <MudButton
-                Variant="Variant.Outlined"
-                Disabled="@(_filter.PageNumber <= 1 || _isLoading)"
-                OnClick="PreviousPageAsync">
-                Previous
-            </MudButton>
+		<MudStack Row="true" Spacing="2">
+			<MudButton Variant="Variant.Outlined" Disabled="@(_filter.PageNumber <= 1 || _isLoading)"
+								 OnClick="PreviousPageAsync">
+				Previous
+			</MudButton>
 
-            <MudButton
-                Variant="Variant.Outlined"
-                Disabled="@(_filter.PageNumber >= TotalPages || _isLoading)"
-                OnClick="NextPageAsync">
-                Next
-            </MudButton>
-        </MudStack>
-    </MudStack>
+			<MudButton Variant="Variant.Outlined" Disabled="@(_filter.PageNumber >= TotalPages || _isLoading)"
+								 OnClick="NextPageAsync">
+				Next
+			</MudButton>
+		</MudStack>
+	</MudStack>
 </MudStack>
 
 @code {
-    private readonly RequestFilterDto _filter = new()
-    {
-        PageNumber = 1,
-        PageSize = 10
-    };
+	private readonly RequestFilterDto _filter = new()
+	{
+		PageNumber = 1,
+		PageSize = 10
+	};
 
-    private PagedResultDto<RequestListItemDto> _requests = new()
-    {
-        Items = [],
-        PageNumber = 1,
-        PageSize = 10,
-        TotalCount = 0
-    };
+	private PagedResultDto<RequestListItemDto> _requests = new()
+	{
+		Items = [],
+		PageNumber = 1,
+		PageSize = 10,
+		TotalCount = 0
+	};
 
-    private IReadOnlyList<LocationOptionDto> _locations = [];
-    private bool _isLoading;
-    private string? _error;
+	private IReadOnlyList<LocationOptionDto> _locations = [];
+	private bool _isLoading;
+	private string? _error;
 
-    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_requests.TotalCount / _filter.PageSize));
+	private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_requests.TotalCount / _filter.PageSize));
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadLocationsAsync();
-        await LoadRequestsAsync();
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadLocationsAsync();
+		await LoadRequestsAsync();
+	}
 
-    private async Task LoadLocationsAsync()
-    {
-        try
-        {
-            _locations = await ApiClient.GetLocationsAsync();
-        }
-        catch (Exception ex)
-        {
-            _error = $"Failed to load locations: {ex.Message}";
-        }
-    }
+	private async Task LoadLocationsAsync()
+	{
+		try
+		{
+			_locations = await ApiClient.GetLocationsAsync();
+		}
+		catch (Exception ex)
+		{
+			_error = $"Failed to load locations: {ex.Message}";
+		}
+	}
 
-    private async Task LoadRequestsAsync()
-    {
-        _isLoading = true;
-        _error = null;
+	private async Task LoadRequestsAsync()
+	{
+		_isLoading = true;
+		_error = null;
 
-        try
-        {
-            _requests = await ApiClient.GetRequestsAsync(_filter);
-        }
-        catch (Exception ex)
-        {
-            _error = $"Failed to load requests: {ex.Message}";
-            _requests = new PagedResultDto<RequestListItemDto>
-            {
-                Items = [],
-                PageNumber = _filter.PageNumber,
-                PageSize = _filter.PageSize,
-                TotalCount = 0
-            };
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
+		try
+		{
+			_requests = await ApiClient.GetRequestsAsync(_filter);
+		}
+		catch (Exception ex)
+		{
+			_error = $"Failed to load requests: {ex.Message}";
+			_requests = new PagedResultDto<RequestListItemDto>
+			{
+				Items = [],
+				PageNumber = _filter.PageNumber,
+				PageSize = _filter.PageSize,
+				TotalCount = 0
+			};
+		}
+		finally
+		{
+			_isLoading = false;
+		}
+	}
 
-    private async Task ApplyFiltersAsync()
-    {
-        _filter.PageNumber = 1;
-        await LoadRequestsAsync();
-    }
+	private async Task ApplyFiltersAsync()
+	{
+		_filter.PageNumber = 1;
+		await LoadRequestsAsync();
+	}
 
-    private async Task ResetFiltersAsync()
-    {
-        _filter.Status = null;
-        _filter.Priority = null;
-        _filter.LocationCode = null;
-        _filter.PageNumber = 1;
-        _filter.PageSize = 10;
+	private async Task ResetFiltersAsync()
+	{
+		_filter.Status = null;
+		_filter.Priority = null;
+		_filter.LocationCode = null;
+		_filter.PageNumber = 1;
+		_filter.PageSize = 10;
 
-        await LoadRequestsAsync();
-    }
+		await LoadRequestsAsync();
+	}
 
-    private async Task PreviousPageAsync()
-    {
-        if (_filter.PageNumber <= 1)
-        {
-            return;
-        }
+	private async Task PreviousPageAsync()
+	{
+		if (_filter.PageNumber <= 1)
+		{
+			return;
+		}
 
-        _filter.PageNumber--;
-        await LoadRequestsAsync();
-    }
+		_filter.PageNumber--;
+		await LoadRequestsAsync();
+	}
 
-    private async Task NextPageAsync()
-    {
-        if (_filter.PageNumber >= TotalPages)
-        {
-            return;
-        }
+	private async Task NextPageAsync()
+	{
+		if (_filter.PageNumber >= TotalPages)
+		{
+			return;
+		}
 
-        _filter.PageNumber++;
-        await LoadRequestsAsync();
-    }
+		_filter.PageNumber++;
+		await LoadRequestsAsync();
+	}
 
-    private void OpenDetails(Guid requestId)
-    {
-        NavigationManager.NavigateTo($"/requests/{requestId}");
-    }
+	private void OpenDetails(Guid requestId)
+	{
+		NavigationManager.NavigateTo($"/requests/{requestId}");
+	}
 
-    private static Color GetStatusColor(RequestStatus status)
-    {
-        return status switch
-        {
-            RequestStatus.Draft => Color.Default,
-            RequestStatus.Submitted => Color.Info,
-            RequestStatus.Approved => Color.Success,
-            RequestStatus.Rejected => Color.Error,
-            RequestStatus.Fulfilled => Color.Primary,
-            _ => Color.Default
-        };
-    }
+	private static Color GetStatusColor(RequestStatus status)
+	{
+		return status switch
+		{
+			RequestStatus.Draft => Color.Default,
+			RequestStatus.Submitted => Color.Info,
+			RequestStatus.Approved => Color.Success,
+			RequestStatus.Rejected => Color.Error,
+			RequestStatus.Fulfilled => Color.Primary,
+			_ => Color.Default
+		};
+	}
 
-    private static Color GetValidationColor(ValidationStatus status)
-    {
-        return status switch
-        {
-            ValidationStatus.Pending => Color.Warning,
-            ValidationStatus.Valid => Color.Success,
-            ValidationStatus.Invalid => Color.Error,
-            _ => Color.Default
-        };
-    }
+	private static Color GetValidationColor(ValidationStatus status)
+	{
+		return status switch
+		{
+			ValidationStatus.Pending => Color.Warning,
+			ValidationStatus.Valid => Color.Success,
+			ValidationStatus.Invalid => Color.Error,
+			_ => Color.Default
+		};
+	}
 
-    private static Color GetPriorityColor(Priority priority)
-    {
-        return priority switch
-        {
-            Priority.Low => Color.Default,
-            Priority.Normal => Color.Info,
-            Priority.Urgent => Color.Error,
-            _ => Color.Default
-        };
-    }
+	private static Color GetPriorityColor(Priority priority)
+	{
+		return priority switch
+		{
+			Priority.Low => Color.Default,
+			Priority.Normal => Color.Info,
+			Priority.Urgent => Color.Error,
+			_ => Color.Default
+		};
+	}
 }
