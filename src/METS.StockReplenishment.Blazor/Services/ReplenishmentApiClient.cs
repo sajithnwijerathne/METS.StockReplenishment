@@ -47,6 +47,22 @@ public class ReplenishmentApiClient
 		return result ?? [];
 	}
 
+	public async Task<RequestDto> CreateDraftAsync(
+    CreateRequestDto dto,
+    CancellationToken cancellationToken = default)
+	{
+		using var response = await _httpClient.PostAsJsonAsync(
+			"api/requests",
+			dto,
+			cancellationToken);
+
+		await EnsureSuccessAsync(response);
+
+		var created = await response.Content.ReadFromJsonAsync<RequestDto>(cancellationToken: cancellationToken);
+
+		return created ?? throw new InvalidOperationException("The API returned an empty response.");
+	}
+
 	public async Task SubmitRequestAsync(Guid requestId, CancellationToken cancellationToken = default)
 	{
 		using var response = await _httpClient.PostAsync(

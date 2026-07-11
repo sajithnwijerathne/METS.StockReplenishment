@@ -116,13 +116,19 @@
 		</MudText>
 
 		<MudStack Row="true" Spacing="2">
-			<MudButton Variant="Variant.Outlined" Disabled="@(_filter.PageNumber <= 1 || _isLoading)"
-								 OnClick="PreviousPageAsync">
+			<MudButton
+				Variant="Variant.Outlined"
+				Disabled="@(_filter.PageNumber <= 1 || _isLoading)"
+				OnClick="PreviousPageAsync"
+			>
 				Previous
 			</MudButton>
 
-			<MudButton Variant="Variant.Outlined" Disabled="@(_filter.PageNumber >= TotalPages || _isLoading)"
-								 OnClick="NextPageAsync">
+			<MudButton
+				Variant="Variant.Outlined"
+				Disabled="@(_filter.PageNumber >= TotalPages || _isLoading)"
+				OnClick="NextPageAsync"
+			>
 				Next
 			</MudButton>
 		</MudStack>

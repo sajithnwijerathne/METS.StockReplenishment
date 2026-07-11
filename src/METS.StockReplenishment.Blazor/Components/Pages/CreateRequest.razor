@@ -1,0 +1,276 @@
+@page "/requests/create"
+@rendermode InteractiveServer
+@inject ReplenishmentApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Request</PageTitle>
+
+<MudStack Spacing="3">
+	<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+		<MudText Typo="Typo.h4">Create Replenishment Request</MudText>
+
+		<MudButton Variant="Variant.Text" Color="Color.Default" OnClick="BackToList">
+			Back to Requests
+		</MudButton>
+	</MudStack>
+
+	@if (!string.IsNullOrWhiteSpace(_error))
+	{
+		<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+			@_error
+		</MudAlert>
+	}
+
+	<MudPaper Class="pa-4">
+		<MudGrid Spacing="3">
+			<MudItem xs="12" md="6">
+				<MudSelect
+					T="string"
+					Label="Location"
+					Variant="Variant.Outlined"
+					@bind-Value="_model.LocationCode"
+					Required="true">
+					@foreach (var location in _locations)
+					{
+						<MudSelectItem T="string" Value="@location.Code">@location.Name</MudSelectItem>
+					}
+				</MudSelect>
+			</MudItem>
+
+			<MudItem xs="12" md="6">
+				<MudSelect
+					T="Priority"
+					Label="Priority"
+					Variant="Variant.Outlined"
+					@bind-Value="_model.Priority"
+					Required="true"
+				>
+					<MudSelectItem T="Priority" Value="@Priority.Low">Low</MudSelectItem>
+					<MudSelectItem T="Priority" Value="@Priority.Normal">Normal</MudSelectItem>
+					<MudSelectItem T="Priority" Value="@Priority.Urgent">Urgent</MudSelectItem>
+				</MudSelect>
+			</MudItem>
+		</MudGrid>
+	</MudPaper>
+
+	<MudPaper Class="pa-4">
+		<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+			<MudText Typo="Typo.h6">Request Items</MudText>
+
+			<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddItem">
+				Add Item
+			</MudButton>
+		</MudStack>
+
+		@if (_items.Count == 0)
+		{
+			<MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">
+				Add at least one item before creating the request.
+			</MudAlert>
+		}
+		else
+		{
+			<MudStack Spacing="3" Class="mt-3">
+				@for (var index = 0; index < _items.Count; index++)
+				{
+					var item = _items[index];
+
+					<MudPaper Class="pa-3" Outlined="true">
+						<MudStack Spacing="2">
+							<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+								<MudText Typo="Typo.subtitle1">Item @(index + 1)</MudText>
+
+								<MudButton
+									Variant="Variant.Text"
+									Color="Color.Error"
+									Disabled="@(_items.Count == 1)"
+									OnClick="@(() => RemoveItem(item))"
+								>
+									Remove
+								</MudButton>
+							</MudStack>
+
+							<MudGrid Spacing="2">
+								<MudItem xs="12" md="4">
+									<MudTextField
+										T="string"
+										Label="Article Number"
+										Variant="Variant.Outlined"
+										@bind-Value="item.ArticleNumber"
+										Required="true"
+									/>
+								</MudItem>
+
+								<MudItem xs="12" md="5">
+									<MudTextField
+										T="string"
+										Label="Description"
+										Variant="Variant.Outlined"
+										@bind-Value="item.Description"
+										Required="true"
+									/>
+								</MudItem>
+
+								<MudItem xs="12" md="3">
+									<MudNumericField
+										T="decimal"
+										Label="Requested Quantity"
+										Variant="Variant.Outlined"
+										Min="0.01m"
+										Immediate="true"
+										@bind-Value="item.RequestedQuantity"
+										Required="true"
+									/>
+								</MudItem>
+							</MudGrid>
+						</MudStack>
+					</MudPaper>
+				}
+			</MudStack>
+		}
+	</MudPaper>
+
+	<MudStack Row="true" Spacing="2">
+		<MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isSaving" OnClick="SaveDraftAsync">
+			Save Draft
+		</MudButton>
+
+		<MudButton Variant="Variant.Outlined" Color="Color.Secondary" Disabled="_isSaving" OnClick="SaveAndOpenAsync">
+			Save and Open Details
+		</MudButton>
+	</MudStack>
+</MudStack>
+
+@code {
+	private readonly CreateRequestDto _model = new()
+	{
+		Priority = Priority.Normal,
+		Items = []
+	};
+
+	private readonly List<CreateRequestItemDto> _items = [];
+	private IReadOnlyList<LocationOptionDto> _locations = [];
+	private bool _isSaving;
+	private string? _error;
+
+	protected override async Task OnInitializedAsync()
+	{
+		AddItem();
+
+		try
+		{
+			_locations = await ApiClient.GetLocationsAsync();
+		}
+		catch (Exception ex)
+		{
+			_error = $"Failed to load locations: {ex.Message}";
+		}
+	}
+
+	private void AddItem()
+	{
+		var item = new CreateRequestItemDto
+		{
+			ArticleNumber = string.Empty,
+			Description = string.Empty,
+			RequestedQuantity = 1
+		};
+
+		_items.Add(item);
+		_model.Items = _items;
+	}
+
+	private void RemoveItem(CreateRequestItemDto item)
+	{
+		_items.Remove(item);
+		_model.Items = _items;
+	}
+
+	private async Task SaveDraftAsync()
+	{
+		await CreateDraftAsync(openDetailsAfterCreate: false);
+	}
+
+	private async Task SaveAndOpenAsync()
+	{
+		await CreateDraftAsync(openDetailsAfterCreate: true);
+	}
+
+	private async Task CreateDraftAsync(bool openDetailsAfterCreate)
+	{
+		_error = null;
+
+		if (!ValidateForm())
+		{
+			return;
+		}
+
+		_isSaving = true;
+
+		try
+		{
+			_model.Items = _items;
+
+			var created = await ApiClient.CreateDraftAsync(_model);
+
+			if (openDetailsAfterCreate)
+			{
+				NavigationManager.NavigateTo($"/requests/{created.Id}");
+				return;
+			}
+
+			NavigationManager.NavigateTo("/requests");
+		}
+		catch (Exception ex)
+		{
+			_error = ex.Message;
+		}
+		finally
+		{
+			_isSaving = false;
+		}
+	}
+
+	private bool ValidateForm()
+	{
+		if (string.IsNullOrWhiteSpace(_model.LocationCode))
+		{
+			_error = "Location is required.";
+			return false;
+		}
+
+		if (_items.Count == 0)
+		{
+			_error = "At least one item is required.";
+			return false;
+		}
+
+		foreach (var item in _items)
+		{
+			if (string.IsNullOrWhiteSpace(item.ArticleNumber))
+			{
+				_error = "Each item must have an article number.";
+				return false;
+			}
+
+			if (string.IsNullOrWhiteSpace(item.Description))
+			{
+				_error = "Each item must have a description.";
+				return false;
+			}
+
+			if (item.RequestedQuantity <= 0)
+			{
+				_error = "Requested quantity must be greater than zero.";
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private void BackToList()
+	{
+		NavigationManager.NavigateTo("/requests");
+	}
+}
