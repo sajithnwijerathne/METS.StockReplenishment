@@ -2,6 +2,7 @@
 @implements IAsyncDisposable
 @inject ReplenishmentApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Request Details</PageTitle>
 
@@ -67,20 +68,6 @@ else
 
 		<MudText Typo="Typo.h4">Request Details</MudText>
 
-		@if (!string.IsNullOrWhiteSpace(_actionMessage))
-		{
-			<MudAlert Severity="Severity.Success" Variant="Variant.Filled">
-				@_actionMessage
-			</MudAlert>
-		}
-
-		@if (!string.IsNullOrWhiteSpace(_actionError))
-		{
-			<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-				@_actionError
-			</MudAlert>
-		}
-
 			<MudGrid Spacing="3">
 				<MudItem xs="12" md="6">
 					<MudPaper Class="pa-4">
@@ -133,6 +120,13 @@ else
 									Variant="Variant.Outlined"
 									Lines="3"
 									@bind-Value="_rejectReason" />
+
+								@if (!string.IsNullOrWhiteSpace(_rejectReasonError))
+								{
+									<MudText Typo="Typo.caption" Color="Color.Error">
+										@_rejectReasonError
+									</MudText>
+								}
 							}
 
 							@if (CanFulfill)
@@ -200,7 +194,7 @@ else
 	private bool _isLoading = true;
 	private string? _loadError;
 	private string? _actionError;
-	private string? _actionMessage;
+	private string? _rejectReasonError;
 	private string _rejectReason = string.Empty;
 	private readonly Dictionary<Guid, decimal> _fulfillmentValues = [];
 	private CancellationTokenSource? _pollingCancellationTokenSource;
@@ -259,9 +253,12 @@ else
 
 	private async Task RejectAsync()
 	{
+
+		_rejectReasonError = null;
+
 		if (string.IsNullOrWhiteSpace(_rejectReason))
 		{
-			_actionError = "A rejection reason is required.";
+			_rejectReasonError = "Rejection reason is required.";
 			return;
 		}
 
@@ -297,18 +294,19 @@ else
 	private async Task RunActionAsync(Func<Task> action, string successMessage)
 	{
 		_actionError = null;
-		_actionMessage = null;
+		_rejectReasonError = null;
 
 		try
 		{
 			await action();
-			_actionMessage = successMessage;
+			Snackbar.Add(successMessage, Severity.Success);
 			await LoadRequestAsync();
 			StartPollingIfNeeded();
 		}
 		catch (Exception ex)
 		{
 			_actionError = ex.Message;
+			Snackbar.Add(ex.Message, Severity.Error);
 		}
 	}
 
