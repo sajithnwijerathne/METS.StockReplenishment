@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject ReplenishmentApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Create Request</PageTitle>
 
@@ -14,10 +15,17 @@
 		</MudButton>
 	</MudStack>
 
-	@if (!string.IsNullOrWhiteSpace(_error))
+	@if (!string.IsNullOrWhiteSpace(_loadError))
 	{
 		<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-			@_error
+			@_loadError
+		</MudAlert>
+	}
+
+	@if (!string.IsNullOrWhiteSpace(_formError))
+	{
+		<MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+			@_formError
 		</MudAlert>
 	}
 
@@ -74,11 +82,12 @@
 				@for (var index = 0; index < _items.Count; index++)
 				{
 					var item = _items[index];
+					var itemNumber = index + 1;
 
 					<MudPaper Class="pa-3" Outlined="true">
 						<MudStack Spacing="2">
 							<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-								<MudText Typo="Typo.subtitle1">Item @(index + 1)</MudText>
+								<MudText Typo="Typo.subtitle1">Item @itemNumber</MudText>
 
 								<MudButton
 									Variant="Variant.Text"
@@ -151,11 +160,15 @@
 	private readonly List<CreateRequestItemDto> _items = [];
 	private IReadOnlyList<LocationOptionDto> _locations = [];
 	private bool _isSaving;
-	private string? _error;
+	private string? _loadError;
+	private string? _formError;
 
 	protected override async Task OnInitializedAsync()
 	{
-		AddItem();
+		if (_items.Count == 0)
+		{
+			AddItem();
+		}
 
 		try
 		{
@@ -163,7 +176,7 @@
 		}
 		catch (Exception ex)
 		{
-			_error = $"Failed to load locations: {ex.Message}";
+			_loadError = $"Failed to load locations: {ex.Message}";
 		}
 	}
 
@@ -198,7 +211,7 @@
 
 	private async Task CreateDraftAsync(bool openDetailsAfterCreate)
 	{
-		_error = null;
+		_formError = null;
 
 		if (!ValidateForm())
 		{
@@ -213,6 +226,8 @@
 
 			var created = await ApiClient.CreateDraftAsync(_model);
 
+			Snackbar.Add("Draft saved successfully.", Severity.Success);
+
 			if (openDetailsAfterCreate)
 			{
 				NavigationManager.NavigateTo($"/requests/{created.Id}");
@@ -223,7 +238,8 @@
 		}
 		catch (Exception ex)
 		{
-			_error = ex.Message;
+			_formError = ex.Message;
+			Snackbar.Add(ex.Message, Severity.Error);
 		}
 		finally
 		{
@@ -235,13 +251,13 @@
 	{
 		if (string.IsNullOrWhiteSpace(_model.LocationCode))
 		{
-			_error = "Location is required.";
+			_formError = "Location is required.";
 			return false;
 		}
 
 		if (_items.Count == 0)
 		{
-			_error = "At least one item is required.";
+			_formError = "At least one item is required.";
 			return false;
 		}
 
@@ -249,19 +265,19 @@
 		{
 			if (string.IsNullOrWhiteSpace(item.ArticleNumber))
 			{
-				_error = "Each item must have an article number.";
+				_formError = "Each item must have an article number.";
 				return false;
 			}
 
 			if (string.IsNullOrWhiteSpace(item.Description))
 			{
-				_error = "Each item must have a description.";
+				_formError = "Each item must have a description.";
 				return false;
 			}
 
 			if (item.RequestedQuantity <= 0)
 			{
-				_error = "Requested quantity must be greater than zero.";
+				_formError = "Requested quantity must be greater than zero.";
 				return false;
 			}
 		}
