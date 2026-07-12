@@ -9,10 +9,10 @@
 {
     <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
 }
-else if (!string.IsNullOrWhiteSpace(_error))
+else if (!string.IsNullOrWhiteSpace(_loadError))
 {
 	<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-		@_error
+		@_loadError
 	</MudAlert>
 }
 else if (_request is null)
@@ -74,6 +74,13 @@ else
 			</MudAlert>
 		}
 
+		@if (!string.IsNullOrWhiteSpace(_actionError))
+		{
+			<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+				@_actionError
+			</MudAlert>
+		}
+
 			<MudGrid Spacing="3">
 				<MudItem xs="12" md="6">
 					<MudPaper Class="pa-4">
@@ -118,7 +125,7 @@ else
 						<MudStack Spacing="2">
 							<MudText Typo="Typo.h6">Actions</MudText>
 
-							@if (CanReject)
+							@if (CanReject && !IsValidationInProgress)
 							{
 								<MudTextField
 									T="string"
@@ -191,7 +198,8 @@ else
 
 	private RequestDto? _request;
 	private bool _isLoading = true;
-	private string? _error;
+	private string? _loadError;
+	private string? _actionError;
 	private string? _actionMessage;
 	private string _rejectReason = string.Empty;
 	private readonly Dictionary<Guid, decimal> _fulfillmentValues = [];
@@ -214,7 +222,7 @@ else
 	private async Task LoadRequestAsync()
 	{
 		_isLoading = true;
-		_error = null;
+		_loadError = null;
 
 		try
 		{
@@ -227,7 +235,7 @@ else
 		}
 		catch (Exception ex)
 		{
-				_error = $"Failed to load request: {ex.Message}";
+			_loadError = $"Failed to load request: {ex.Message}";
 		}
 		finally
 		{
@@ -253,7 +261,7 @@ else
 	{
 		if (string.IsNullOrWhiteSpace(_rejectReason))
 		{
-			_error = "A rejection reason is required.";
+			_actionError = "A rejection reason is required.";
 			return;
 		}
 
@@ -288,7 +296,7 @@ else
 
 	private async Task RunActionAsync(Func<Task> action, string successMessage)
 	{
-		_error = null;
+		_actionError = null;
 		_actionMessage = null;
 
 		try
@@ -300,7 +308,7 @@ else
 		}
 		catch (Exception ex)
 		{
-			_error = ex.Message;
+			_actionError = ex.Message;
 		}
 	}
 
