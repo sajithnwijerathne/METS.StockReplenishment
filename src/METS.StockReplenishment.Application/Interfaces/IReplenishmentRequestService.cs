@@ -15,4 +15,9 @@ public interface IReplenishmentRequestService
     Task RejectAsync(Guid requestId, RejectRequestDto dto, CancellationToken cancellationToken = default);
 
     Task FulfillAsync(Guid requestId, FulfillRequestDto dto, CancellationToken cancellationToken = default);
+
+    Task<RequestDto> UpdateDraftAsync(
+        Guid requestId,
+        CreateRequestDto dto,
+        CancellationToken cancellationToken = default);
 }

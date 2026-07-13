@@ -301,4 +301,217 @@ public class ReplenishmentRequestServiceTests
 			]
 		};
 	}
+
+	private static ReplenishmentRequest BuildRequestWithItems(
+		Guid requestId,
+		RequestStatus status,
+		ValidationStatus validationStatus,
+		params RequestItem[] items)
+	{
+		return new ReplenishmentRequest
+		{
+			Id = requestId,
+			LocationCode = "HITACHI-Ludvika",
+			Priority = Priority.Normal,
+			Status = status,
+			ValidationStatus = validationStatus,
+			CreatedAt = DateTime.UtcNow,
+			Items = items.ToList()
+		};
+	}
+
+	[Test]
+	public async Task UpdateDraftAsync_WhenRequestIsDraft_UpdatesRequestAndPersists()
+	{
+		var requestId = Guid.NewGuid();
+		var request = BuildRequest(requestId, RequestStatus.Draft, ValidationStatus.NotStarted);
+
+		_requestRepository.GetByIdAsync(requestId, Arg.Any<CancellationToken>())
+			.Returns(request);
+
+		_locationRepository.ExistsAsync("HITACHI-Västerås", Arg.Any<CancellationToken>())
+			.Returns(true);
+
+		var dto = new CreateRequestDto
+		{
+			LocationCode = "HITACHI-Västerås",
+			Priority = Priority.Urgent,
+			Items =
+			[
+				new CreateRequestItemDto
+				{
+					ArticleNumber = "ART-2001",
+					Description = "Updated Item",
+					RequestedQuantity = 8
+				}
+			]
+		};
+
+		var result = await _service.UpdateDraftAsync(requestId, dto);
+
+		Assert.That(result.LocationCode, Is.EqualTo("HITACHI-Västerås"));
+		Assert.That(result.Priority, Is.EqualTo(Priority.Urgent));
+		Assert.That(result.Status, Is.EqualTo(RequestStatus.Draft));
+		Assert.That(result.ValidationStatus, Is.EqualTo(ValidationStatus.NotStarted));
+
+		Assert.That(request.LocationCode, Is.EqualTo("HITACHI-Västerås"));
+		Assert.That(request.Priority, Is.EqualTo(Priority.Urgent));
+		Assert.That(request.Items, Has.Count.EqualTo(1));
+		Assert.That(request.Items[0].ArticleNumber, Is.EqualTo("ART-2001"));
+
+		await _requestRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task UpdateDraftAsync_WhenReplacingWithFewerItems_RemovesExistingItemsAndPersists()
+	{
+		var requestId = Guid.NewGuid();
+		var request = BuildRequestWithItems(
+			requestId,
+			RequestStatus.Draft,
+			ValidationStatus.NotStarted,
+			new RequestItem
+			{
+				Id = Guid.NewGuid(),
+				ReplenishmentRequestId = requestId,
+				ArticleNumber = "ART-1001",
+				Description = "Bearing",
+				RequestedQuantity = 12,
+				FulfilledQuantity = 0
+			},
+			new RequestItem
+			{
+				Id = Guid.NewGuid(),
+				ReplenishmentRequestId = requestId,
+				ArticleNumber = "ART-1002",
+				Description = "Seal",
+				RequestedQuantity = 4,
+				FulfilledQuantity = 0
+			});
+
+		_requestRepository.GetByIdAsync(requestId, Arg.Any<CancellationToken>())
+			.Returns(request);
+
+		_requestRepository.RemoveItemsAsync(Arg.Any<IEnumerable<RequestItem>>(), Arg.Any<CancellationToken>())
+			.Returns(Task.CompletedTask);
+
+		_locationRepository.ExistsAsync("HITACHI-Västerås", Arg.Any<CancellationToken>())
+			.Returns(true);
+
+		var dto = new CreateRequestDto
+		{
+			LocationCode = "HITACHI-Västerås",
+			Priority = Priority.Urgent,
+			Items =
+			[
+				new CreateRequestItemDto
+				{
+					ArticleNumber = "ART-2001",
+					Description = "Updated Item",
+					RequestedQuantity = 8
+				}
+			]
+		};
+
+		var result = await _service.UpdateDraftAsync(requestId, dto);
+
+		Assert.That(result.LocationCode, Is.EqualTo("HITACHI-Västerås"));
+		Assert.That(result.Priority, Is.EqualTo(Priority.Urgent));
+		Assert.That(result.Items, Has.Count.EqualTo(1));
+		Assert.That(result.Items[0].ArticleNumber, Is.EqualTo("ART-2001"));
+
+		Assert.That(request.Items, Has.Count.EqualTo(1));
+		Assert.That(request.Items[0].ArticleNumber, Is.EqualTo("ART-2001"));
+		Assert.That(request.Items[0].Description, Is.EqualTo("Updated Item"));
+		Assert.That(request.Items[0].RequestedQuantity, Is.EqualTo(8));
+
+		await _requestRepository.Received(1).RemoveItemsAsync(
+			Arg.Is<IEnumerable<RequestItem>>(items => items.Count() == 1),
+			Arg.Any<CancellationToken>());
+
+		await _requestRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task UpdateDraftAsync_WhenReplacingWithMoreItems_RebuildsItemCollection()
+	{
+		var requestId = Guid.NewGuid();
+		var request = BuildRequest(requestId, RequestStatus.Draft, ValidationStatus.NotStarted);
+
+		_requestRepository.GetByIdAsync(requestId, Arg.Any<CancellationToken>())
+			.Returns(request);
+
+		_requestRepository.RemoveItemsAsync(Arg.Any<IEnumerable<RequestItem>>(), Arg.Any<CancellationToken>())
+			.Returns(Task.CompletedTask);
+
+		_locationRepository.ExistsAsync("HITACHI-Ludvika", Arg.Any<CancellationToken>())
+			.Returns(true);
+
+		var dto = new CreateRequestDto
+		{
+			LocationCode = "HITACHI-Ludvika",
+			Priority = Priority.Normal,
+			Items =
+			[
+				new CreateRequestItemDto
+				{
+					ArticleNumber = "ART-2001",
+					Description = "Bearing",
+					RequestedQuantity = 5
+				},
+				new CreateRequestItemDto
+				{
+					ArticleNumber = "ART-2002",
+					Description = "Seal",
+					RequestedQuantity = 9
+				}
+			]
+		};
+
+		var result = await _service.UpdateDraftAsync(requestId, dto);
+
+		Assert.That(result.Items, Has.Count.EqualTo(2));
+		Assert.That(result.Items[0].ArticleNumber, Is.EqualTo("ART-2001"));
+		Assert.That(result.Items[1].ArticleNumber, Is.EqualTo("ART-2002"));
+
+		Assert.That(request.Items, Has.Count.EqualTo(2));
+		Assert.That(request.Items[0].ArticleNumber, Is.EqualTo("ART-2001"));
+		Assert.That(request.Items[1].ArticleNumber, Is.EqualTo("ART-2002"));
+
+		await _requestRepository.DidNotReceive().RemoveItemsAsync(
+			Arg.Any<IEnumerable<RequestItem>>(),
+			Arg.Any<CancellationToken>());
+
+		await _requestRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public void UpdateDraftAsync_WhenRequestIsNotDraft_ThrowsInvalidOperationException()
+	{
+		var requestId = Guid.NewGuid();
+		var request = BuildRequest(requestId, RequestStatus.Submitted, ValidationStatus.Pending);
+
+		_requestRepository.GetByIdAsync(requestId, Arg.Any<CancellationToken>())
+			.Returns(request);
+
+		var dto = new CreateRequestDto
+		{
+			LocationCode = "HITACHI-Ludvika",
+			Priority = Priority.Normal,
+			Items =
+			[
+				new CreateRequestItemDto
+				{
+					ArticleNumber = "ART-1001",
+					Description = "Bearing",
+					RequestedQuantity = 5
+				}
+			]
+		};
+
+		var act = () => _service.UpdateDraftAsync(requestId, dto);
+
+		Assert.That(act, Throws.TypeOf<InvalidOperationException>()
+			.With.Message.EqualTo("Only draft requests can be edited."));
+	}
 }

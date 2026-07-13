@@ -10,5 +10,9 @@ public interface IReplenishmentRequestRepository
 
     Task AddAsync(ReplenishmentRequest request, CancellationToken cancellationToken = default);
 
+    Task RemoveItemsAsync(
+        IEnumerable<RequestItem> items,
+        CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

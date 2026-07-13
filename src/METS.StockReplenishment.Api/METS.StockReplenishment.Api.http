@@ -2,6 +2,8 @@
 @approvalRequestId = REQUEST_ID
 @rejectionRequestId = REQUEST_ID
 
+@draftRequestId = REQUEST_ID
+
 ###
 # Get all locations
 GET {{baseUrl}}/api/locations
@@ -9,7 +11,7 @@ Accept: application/json
 
 ###
 # Get requests
-GET {{baseUrl}}/api/requests
+GET {{baseUrl}}/api/requests/{{draftRequestId}}
 Accept: application/json
 
 ###
@@ -31,6 +33,28 @@ Accept: application/json
       "articleNumber": "ART-4002",
       "description": "Insulation Sheet",
       "requestedQuantity": 5
+    }
+  ]
+}
+
+###
+# Update the draft
+PUT {{baseUrl}}/api/requests/{{draftRequestId}}
+Content-Type: application/json
+
+{
+  "locationCode": "HITACHI-Västerås",
+  "priority": "Urgent",
+  "items": [
+    {
+      "articleNumber": "ART-7002",
+      "description": "Updated Draft Item",
+      "requestedQuantity": 8
+    },
+    {
+      "articleNumber": "ART-7003",
+      "description": "Newly Added Draft Item",
+      "requestedQuantity": 15
     }
   ]
 }

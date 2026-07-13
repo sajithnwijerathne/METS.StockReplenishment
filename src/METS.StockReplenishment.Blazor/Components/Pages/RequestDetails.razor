@@ -33,6 +33,13 @@ else
 			<MudStack Row="true" Spacing="2">
 				@if (CanSubmit)
 				{
+					<MudButton
+						Variant="Variant.Outlined"
+						Color="Color.Default"
+						OnClick='@(() => NavigationManager.NavigateTo($"/requests/{RequestId}/edit"))'>
+						Edit Draft
+					</MudButton>
+
 					<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync">
 						Submit
 					</MudButton>

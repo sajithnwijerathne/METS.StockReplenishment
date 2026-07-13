@@ -76,6 +76,34 @@ public class RequestsController : ControllerBase
         }
     }
 
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(RequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RequestDto>> UpdateDraft(
+        Guid id,
+        [FromBody] CreateRequestDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var updatedRequest = await _requestService.UpdateDraftAsync(id, dto, cancellationToken);
+            return Ok(updatedRequest);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("{id:guid}/submit")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

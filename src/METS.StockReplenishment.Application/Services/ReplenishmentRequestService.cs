@@ -241,6 +241,86 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         await _requestRepository.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<RequestDto> UpdateDraftAsync(
+        Guid requestId,
+        CreateRequestDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        if (dto == null)
+        {
+            throw new ArgumentNullException(nameof(dto));
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.LocationCode))
+        {
+            throw new ArgumentException("Location code is required.", nameof(dto.LocationCode));
+        }
+
+        if (dto.Items == null || dto.Items.Count == 0)
+        {
+            throw new ArgumentException("At least one item is required.", nameof(dto.Items));
+        }
+
+        var request = await GetExistingRequestAsync(requestId, cancellationToken);
+
+        if (request.Status != RequestStatus.Draft)
+        {
+            throw new InvalidOperationException("Only draft requests can be edited.");
+        }
+
+        var locationExists = await _locationRepository.ExistsAsync(dto.LocationCode, cancellationToken);
+        if (!locationExists)
+        {
+            throw new InvalidOperationException($"Location with code '{dto.LocationCode}' does not exist.");
+        }
+
+        request.LocationCode = dto.LocationCode;
+        request.Priority = dto.Priority;
+        request.ValidationStatus = ValidationStatus.NotStarted;
+        request.RejectionReason = null;
+        request.SubmittedAt = null;
+        request.ReviewedAt = null;
+        request.FulfilledAt = null;
+
+        var existingItems = request.Items.ToList();
+
+        for (int i = 0; i < dto.Items.Count; i++)
+        {
+            var incomingItem = dto.Items[i];
+            if (i < existingItems.Count)
+            {
+                var existingItem = existingItems[i];
+                existingItem.ArticleNumber = incomingItem.ArticleNumber;
+                existingItem.Description = incomingItem.Description;
+                existingItem.RequestedQuantity = incomingItem.RequestedQuantity;
+            }
+            else
+            {
+                request.Items.Add(new RequestItem
+                {
+                    ArticleNumber = incomingItem.ArticleNumber,
+                    Description = incomingItem.Description,
+                    RequestedQuantity = incomingItem.RequestedQuantity,
+                    FulfilledQuantity = 0
+                });
+            }
+        }
+
+        if (existingItems.Count > dto.Items.Count)
+        {
+            var itemsToRemove = existingItems.Skip(dto.Items.Count).ToList();
+            await _requestRepository.RemoveItemsAsync(itemsToRemove, cancellationToken);
+            foreach (var item in itemsToRemove)
+            {
+                request.Items.Remove(item);
+            }
+        }
+
+        await _requestRepository.SaveChangesAsync(cancellationToken);
+
+        return MapToRequestDto(request);
+    }
+
     private async Task<ReplenishmentRequest> GetExistingRequestAsync(
         Guid requestId,
         CancellationToken cancellationToken)

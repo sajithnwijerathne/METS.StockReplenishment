@@ -1,4 +1,5 @@
 @page "/requests/create"
+@page "/requests/{RequestId:guid}/edit"
 @rendermode InteractiveServer
 @inject ReplenishmentApiClient ApiClient
 @inject NavigationManager NavigationManager
@@ -151,6 +152,8 @@
 </MudStack>
 
 @code {
+	[Parameter]
+	public Guid? RequestId { get; set; }
 	private readonly CreateRequestDto _model = new()
 	{
 		Priority = Priority.Normal,
@@ -163,7 +166,7 @@
 	private string? _loadError;
 	private string? _formError;
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnParametersSetAsync()
 	{
 		if (_items.Count == 0)
 		{
@@ -173,6 +176,44 @@
 		try
 		{
 			_locations = await ApiClient.GetLocationsAsync();
+
+			if (!_items.Any())
+			{
+				AddItem();
+			}
+
+			if (RequestId.HasValue)
+			{
+				var existing = await ApiClient.GetRequestByIdAsync(RequestId.Value);
+
+				if (existing is null)
+				{
+					_formError = "Draft request not found.";
+					return;
+				}
+
+				if (existing.Status != RequestStatus.Draft)
+				{
+					_formError = "Only draft requests can be edited.";
+					return;
+				}
+
+				_model.LocationCode = existing.LocationCode;
+				_model.Priority = existing.Priority;
+
+				_items.Clear();
+				foreach (var item in existing.Items)
+				{
+					_items.Add(new CreateRequestItemDto
+					{
+						ArticleNumber = item.ArticleNumber,
+						Description = item.Description,
+						RequestedQuantity = item.RequestedQuantity
+					});
+				}
+
+				_model.Items = _items;
+			}
 		}
 		catch (Exception ex)
 		{
@@ -224,13 +265,22 @@
 		{
 			_model.Items = _items;
 
-			var created = await ApiClient.CreateDraftAsync(_model);
+			RequestDto result;
+
+			if (RequestId.HasValue)
+			{
+				result = await ApiClient.UpdateDraftAsync(RequestId.Value, _model);
+			}
+			else
+			{
+				result = await ApiClient.CreateDraftAsync(_model);
+			}
 
 			Snackbar.Add("Draft saved successfully.", Severity.Success);
 
 			if (openDetailsAfterCreate)
 			{
-				NavigationManager.NavigateTo($"/requests/{created.Id}");
+				NavigationManager.NavigateTo($"/requests/{result.Id}");
 				return;
 			}
 

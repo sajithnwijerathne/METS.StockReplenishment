@@ -42,6 +42,14 @@ public class ReplenishmentRequestRepository : IReplenishmentRequestRepository
         await _dbContext.ReplenishmentRequests.AddAsync(request, cancellationToken);
     }
 
+    public Task RemoveItemsAsync(
+        IEnumerable<RequestItem> items,
+        CancellationToken cancellationToken = default)
+    {
+        _dbContext.RequestItems.RemoveRange(items);
+        return Task.CompletedTask;
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);
