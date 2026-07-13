@@ -38,13 +38,13 @@ Open two terminals from the solution root.
 Terminal 1:
 
 ```bash
-dotnet run --project src/METS.StockReplenishment.Api --launch-profile http
+dotnet run --project src/METS.StockReplenishment.Api
 ```
 
 Terminal 2:
 
 ```bash
-dotnet run --project src/METS.StockReplenishment.Blazor --launch-profile http
+dotnet run --project src/METS.StockReplenishment.Blazor
 ```
 
 Default URLs:
