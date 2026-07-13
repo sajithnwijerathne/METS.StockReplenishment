@@ -161,7 +161,6 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         }
 
         request.Status = RequestStatus.Approved;
-        // request.ValidationStatus = ValidationStatus.Valid;
         request.ReviewedAt = DateTime.UtcNow;
         request.RejectionReason = null;
 
@@ -193,7 +192,6 @@ public class ReplenishmentRequestService : IReplenishmentRequestService
         request.Status = RequestStatus.Rejected;
         request.ReviewedAt = DateTime.UtcNow;
         request.RejectionReason = dto.Reason;
-        // request.ValidationStatus = ValidationStatus.Invalid;
 
         await _requestRepository.SaveChangesAsync(cancellationToken);
     }
