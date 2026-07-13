@@ -59,6 +59,15 @@ Then open the Blazor app in your browser:
 - `http://localhost:5295`
 
 
+### Run Tests
+
+From the solution root, run:
+
+```bash
+dotnet test
+```
+
+
 ## Notes
 - The API uses an in-memory database.
 - Seed data is loaded automatically on startup in Development.
